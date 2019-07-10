@@ -9,8 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
-develop-eggs/
-dist/
+develop-eggs/ dist/
 downloads/
 eggs/
 .eggs/
@@ -104,4 +103,4 @@ venv.bak/
 .mypy_cache/
 
 # CUSTOM
-config/config.yml
+src/config/config.yml
