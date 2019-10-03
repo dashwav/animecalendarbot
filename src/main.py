@@ -4,9 +4,10 @@ import schedule
 import twitter
 import datetime
 import random
+import os
 from time import sleep
 from logging import Formatter, INFO, StreamHandler, getLogger
-from utils import getDateStringWithSuffix, getDateStringWithoutSuffix
+from utils import getDateStringWithSuffix, getDateStringWithoutSuffix, loadEnvConfig
 
 class Bot():
   """
@@ -14,9 +15,6 @@ class Bot():
   """
 
   def __init__(self):
-    with open("src/config/config.yml", 'r') as yml_config:
-        config = yaml.safe_load(yml_config)
-    
     # Set up Logger
     logger = getLogger('animecalendarbot')
     console_handler = StreamHandler()
@@ -25,6 +23,14 @@ class Bot():
     )
     logger.addHandler(console_handler)
     logger.setLevel(INFO)
+
+    try:
+      with open("src/config/config.yml", 'r') as yml_config:
+          config = yaml.safe_load(yml_config)
+    except FileNotFoundError:
+      logger.info("No config file found, loading from environment variables instead")
+      config = loadEnvConfig(logger)
+      logger.info("All environment variables loaded")
 
     # Set up bot context
     self.config = config
