@@ -4,10 +4,12 @@ import schedule
 import twitter
 import datetime
 import random
+import requests
+import json
 import os
 from time import sleep
-from logging import Formatter, INFO, StreamHandler, getLogger
-from utils import getDateStringWithSuffix, getDateStringWithoutSuffix, loadEnvConfig
+from logging import Formatter, INFO, DEBUG, StreamHandler, getLogger
+from utils import getDateStringWithSuffix, getDateStringWithoutSuffix, loadEnvConfig, getPushshiftUrl
 
 class Bot():
   """
@@ -22,7 +24,7 @@ class Bot():
         '%(asctime)s %(levelname)s %(name)s: %(message)s')
     )
     logger.addHandler(console_handler)
-    logger.setLevel(INFO)
+    logger.setLevel(DEBUG)
 
     try:
       with open("src/config/config.yml", 'r') as yml_config:
@@ -35,6 +37,7 @@ class Bot():
     # Set up bot context
     self.config = config
     self.logger = logger
+    self.dailyPosts = []
 
     # Generate the Reddit API instance
     self.reddit = praw.Reddit(client_id=config['creds']['reddit']['client_id'],
@@ -49,9 +52,28 @@ class Bot():
                                access_token_secret=config['creds']['twitter']['access_token_secret'])
     
     # This is where the tasks will get scheduled
-    schedule.every().day.at("10:30").do(self.checkForPosts)
+    # schedule.every().day.at("18:30").do(self.lastDitchCheckForPosts)
 
-  def checkForPosts(self):
+    self.checkForHotPosts()
+
+  def checkForHotPosts(self):
+    # We want to check at the interval to see if there are any new posts of the day that break the threshold
+    url = getPushshiftUrl()
+    self.logger.debug(f"Attempting to access {url}")
+    r = requests.get(url)
+    self.logger.debug(f"Request completed with status: {r.status_code}")
+    if r.status_code != 200:
+      self.logger.error(f"Request to {url} errored out with status code {r.status_code}")
+      return
+    data = json.loads(r.text)
+    submissions = data["data"]
+    for post in submissions:
+      self.logger.debug(f"Link: {post['full_link']}\nTitle: {post['title']}\nSelf Post: {post['is_self']}\nScore: {post['score']}")
+
+  def lastDitchCheckForPosts(self):
+    # We only want to run this if there haven't been any other posts today
+    if self.dailyPosts:
+      return
     current_date = datetime.datetime.now()
     dateStringSuffix = getDateStringWithSuffix('%B {S}',current_date)
     dateStringBare = getDateStringWithoutSuffix(current_date)
