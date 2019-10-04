@@ -4,10 +4,12 @@ import schedule
 import twitter
 import datetime
 import random
+import requests
+import json
 import os
 from time import sleep
-from logging import Formatter, INFO, StreamHandler, getLogger
-from utils import getDateStringWithSuffix, getDateStringWithoutSuffix, loadEnvConfig
+from logging import Formatter, INFO, DEBUG, StreamHandler, getLogger
+from utils import getDateStringWithSuffix, getDateStringWithoutSuffix, loadEnvConfig, getPushshiftUrl
 
 class Bot():
   """
@@ -22,11 +24,13 @@ class Bot():
         '%(asctime)s %(levelname)s %(name)s: %(message)s')
     )
     logger.addHandler(console_handler)
-    logger.setLevel(INFO)
+    logger.setLevel(DEBUG)
 
     try:
+      logger.info("Attempting to load config file...")
       with open("src/config/config.yml", 'r') as yml_config:
           config = yaml.safe_load(yml_config)
+          logger.info("Config file loaded from src/config/config.yml")
     except FileNotFoundError:
       logger.info("No config file found, loading from environment variables instead")
       config = loadEnvConfig(logger)
@@ -35,6 +39,7 @@ class Bot():
     # Set up bot context
     self.config = config
     self.logger = logger
+    self.dailyPosts = []
 
     # Generate the Reddit API instance
     self.reddit = praw.Reddit(client_id=config['creds']['reddit']['client_id'],
@@ -49,9 +54,52 @@ class Bot():
                                access_token_secret=config['creds']['twitter']['access_token_secret'])
     
     # This is where the tasks will get scheduled
-    schedule.every().day.at("10:30").do(self.checkForPosts)
+    self.logger.info(f'Setting up tasks...')
+    # TODO: improve this function to be a last check for any post for the day
+    # schedule.every().day.at("18:30").do(self.lastDitchCheckForPosts)
+    schedule.every().hour.do(self.checkForHotPosts)
+    self.logger.info(f'Tasks intitialized')
 
-  def checkForPosts(self):
+  def checkForHotPosts(self):
+    # We want to check at the interval to see if there are any new posts of the day that break the threshold
+    self.logger.debug(f"Starting regular check task: {datetime.datetime.now()}")
+    url = getPushshiftUrl()
+    self.logger.debug(f"Attempting to access {url}")
+    r = requests.get(url)
+    self.logger.debug(f"Request completed with status: {r.status_code}")
+    if r.status_code != 200:
+      self.logger.error(f"Request to {url} errored out with status code {r.status_code}")
+      return
+    data = json.loads(r.text)
+    submissions = data["data"]
+    top_post = None
+    self.logger.debug(f'There are {len(submissions)} posts to go through')
+    count = 0
+    for post in submissions:
+      count += 1
+      if post['score'] < 50:
+        self.logger.debug(f'Post {count}: {post["id"]} has a score below 50 - {post["score"]}')
+        continue
+      if post['id'] in self.dailyPosts:
+        self.logger.debug(f'Post {count}: {post["id"]} has already been posted')
+        continue
+      if not top_post:
+        top_post = post
+        self.logger.debug(f'Post {count}: Top post has been set to {post["id"]}')
+      if top_post['score'] < post['score']:
+        top_post = post
+        self.logger.debug(f'Post {count}: New top post is {post["id"]}')
+    if not top_post:
+      self.logger.debug(f'There were no posts found that matched the criteria')
+      return
+    self.logger.debug(f'Attempting to post {top_post["id"]} to twitter...')
+    self.postImageToTwitter(top_post['title'], top_post['url'])
+    self.dailyPosts.append(top_post['id'])
+
+  def lastDitchCheckForPosts(self):
+    # We only want to run this if there haven't been any other posts today
+    if self.dailyPosts:
+      return
     current_date = datetime.datetime.now()
     dateStringSuffix = getDateStringWithSuffix('%B {S}',current_date)
     dateStringBare = getDateStringWithoutSuffix(current_date)

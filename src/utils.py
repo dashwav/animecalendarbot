@@ -1,7 +1,7 @@
 """
 Utils file to keep the main file clean
 """
-import datetime
+from datetime import timezone, datetime
 import os
 
 def loadEnvConfig(logger):
@@ -38,3 +38,9 @@ def getDateStringWithSuffix(format: str, current_date: datetime):
 
 def getDateStringWithoutSuffix(current_date: datetime):
   return f'{current_date.strftime("%B")} {str(current_date.day)}'
+
+def getPushshiftUrl():
+  today = datetime.utcnow()
+  day_start = int(datetime(today.year,today.month,today.day,0,0,0,0,timezone.utc).timestamp())
+  print(f"Date: {day_start}")
+  return f"https://api.pushshift.io/reddit/search/submission?subreddit=animecalendar&after={day_start}"
