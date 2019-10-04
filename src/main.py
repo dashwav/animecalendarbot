@@ -55,7 +55,8 @@ class Bot():
     
     # This is where the tasks will get scheduled
     self.logger.info(f'Setting up tasks...')
-    schedule.every().day.at("18:30").do(self.lastDitchCheckForPosts)
+    # TODO: improve this function to be a last check for any post for the day
+    # schedule.every().day.at("18:30").do(self.lastDitchCheckForPosts)
     schedule.every().hour.do(self.checkForHotPosts)
     self.logger.info(f'Tasks intitialized')
 
