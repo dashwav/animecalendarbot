@@ -57,7 +57,7 @@ class Bot():
     self.logger.info(f'Setting up tasks...')
     # TODO: improve this function to be a last check for any post for the day
     # schedule.every().day.at("18:30").do(self.lastDitchCheckForPosts)
-    schedule.every().hour.at(:00).do(self.checkForHotPosts)
+    schedule.every().hour.at(":00").do(self.checkForHotPosts)
     self.logger.info(f'Tasks intitialized')
 
   def checkForHotPosts(self):
