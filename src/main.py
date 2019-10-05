@@ -10,6 +10,7 @@ import os
 from time import sleep
 from logging import Formatter, INFO, DEBUG, StreamHandler, getLogger
 from utils import getDateStringWithSuffix, getDateStringWithoutSuffix, loadEnvConfig, getPushshiftUrl
+from db import DbController
 
 class Bot():
   """
@@ -52,6 +53,13 @@ class Bot():
                                consumer_secret=config['creds']['twitter']['consumer_secret'],
                                access_token_key=config['creds']['twitter']['access_token'],
                                access_token_secret=config['creds']['twitter']['access_token_secret'])
+
+    self.db = DbController()
+
+    todays_posts = self.db.fetch_todays_posts()
+    for post in todays_posts:
+      self.dailyPosts.append(post['reddit']['id'])
+    self.logger.info(f'Loaded in {len(todays_posts)} posts from firestore')
     
     # This is where the tasks will get scheduled
     self.logger.info(f'Setting up tasks...')
@@ -94,8 +102,10 @@ class Bot():
       self.logger.debug(f'There were no posts found that matched the criteria')
       return
     self.logger.debug(f'Attempting to post {top_post.id} to twitter...')
-    self.postImageToTwitter(top_post.title, top_post.url)
-    self.dailyPosts.append(top_post.id)
+    twitter_post = self.postImageToTwitter(top_post.title, top_post.url)
+    if twitter_post:
+      self.db.add_post(top_post, twitter_post)
+      self.dailyPosts.append(top_post.id)
 
   def lastDitchCheckForPosts(self):
     # We only want to run this if there haven't been any other posts today
@@ -122,12 +132,15 @@ class Bot():
     self.postImageToTwitter(chosen_one.title, chosen_one.url)
 
   def postImageToTwitter(self, title: str, image: str):
-    self.logger.info("Posting image to twitter now")
+    self.logger.debug("Attempting to post image to twitter now")
+    post = None
     try:
-      self.twitter.PostUpdate(title, media=image)
+      post = self.twitter.PostUpdate(title, media=image)
     except Exception as e:
       self.logger.critical(f"Error posting image to twitter: {e}")
-    self.logger.info("Finished posting image to twitter")
+      return
+    self.logger.debug("Finished attempting to post image to twitter")
+    return post
 
 
   def run(self):
