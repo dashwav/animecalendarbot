@@ -33,8 +33,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Load Service Account Creds
+      env:
+        FB_SECRET: ${{ secrets.FIREBASE_CREDS }}
       run: |
-        echo "${{ secrets.FIREBASE_CREDS }}"" | base64 --decode  > src/config/serviceAccount.json
+        echo $FB_SECRET | base64 --decode  > src/config/serviceAccount.json
     - uses: actions/checkout@master
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
