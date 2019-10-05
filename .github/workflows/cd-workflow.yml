@@ -32,11 +32,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v1
     - name: Load Service Account Creds
       env:
         FB_SECRET: ${{ secrets.FIREBASE_CREDS }}
       run: |
-        touch src/config/serviceAccount.json && echo $FB_SECRET | base64 --decode  > src/config/serviceAccount.json
+        echo $FB_SECRET | base64 --decode  > src/config/serviceAccount.json
     - uses: actions/checkout@master
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
