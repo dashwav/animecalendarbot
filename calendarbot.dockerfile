@@ -14,6 +14,8 @@ RUN pip install --prefix=/build -r /requirements.txt
 
 FROM base
 
+RUN apk add --no-cache libstdc++
+
 COPY --from=builder /build /usr/local
 COPY --from=builder /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
 COPY . /app
