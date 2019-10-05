@@ -106,3 +106,4 @@ venv.bak/
 .vscode/
 # CUSTOM
 src/config/config.yml
+src/config/serviceAccount.json

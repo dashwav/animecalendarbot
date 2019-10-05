@@ -32,6 +32,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+    - name: Load Service Account Creds
+    - run: |
+        base64 --decode ${{ secrets.FIREBASE_CREDS }} > src/config/serviceAccount.json
     - uses: actions/checkout@master
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
