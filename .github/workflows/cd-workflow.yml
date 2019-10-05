@@ -34,7 +34,7 @@ jobs:
     steps:
     - name: Load Service Account Creds
       run: |
-        base64 --decode ${{ secrets.FIREBASE_CREDS }} > src/config/serviceAccount.json
+        echo ${{ secrets.FIREBASE_CREDS }} | base64 --decode  > src/config/serviceAccount.json
     - uses: actions/checkout@master
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
