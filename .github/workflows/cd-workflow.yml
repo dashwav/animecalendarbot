@@ -37,7 +37,7 @@ jobs:
       env:
         FB_SECRET: ${{ secrets.FIREBASE_CREDS }}
       run: |
-        echo $FB_SECRET | base64 --decode  > src/config/serviceAccount.json
+        echo $FB_SECRET | base64 --decode -i  > src/config/serviceAccount.json
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
