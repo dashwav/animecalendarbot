@@ -76,25 +76,26 @@ class Bot():
     self.logger.debug(f'There are {len(submissions)} posts to go through')
     count = 0
     for post in submissions:
+      sub = self.reddit.submission(id=post["id"])
       count += 1
-      if post['score'] < 50:
-        self.logger.debug(f'Post {count}: {post["id"]} has a score below 50 - {post["score"]}')
+      if sub.score < 50:
+        self.logger.debug(f'Post {count}: {sub.id} has a score below 50 - {sub.score}')
         continue
-      if post['id'] in self.dailyPosts:
-        self.logger.debug(f'Post {count}: {post["id"]} has already been posted')
+      if sub.id in self.dailyPosts:
+        self.logger.debug(f'Post {count}: {sub.id} has already been posted')
         continue
       if not top_post:
-        top_post = post
-        self.logger.debug(f'Post {count}: Top post has been set to {post["id"]}')
-      if top_post['score'] < post['score']:
-        top_post = post
-        self.logger.debug(f'Post {count}: New top post is {post["id"]}')
+        top_post = sub
+        self.logger.debug(f'Post {count}: Top post has been set to {sub.id}')
+      if top_post.score < sub.score:
+        top_post = sub
+        self.logger.debug(f'Post {count}: New top post is {sub.id}')
     if not top_post:
       self.logger.debug(f'There were no posts found that matched the criteria')
       return
-    self.logger.debug(f'Attempting to post {top_post["id"]} to twitter...')
-    self.postImageToTwitter(top_post['title'], top_post['url'])
-    self.dailyPosts.append(top_post['id'])
+    self.logger.debug(f'Attempting to post {top_post.id} to twitter...')
+    self.postImageToTwitter(top_post.title, top_post.url)
+    self.dailyPosts.append(top_post.id)
 
   def lastDitchCheckForPosts(self):
     # We only want to run this if there haven't been any other posts today
