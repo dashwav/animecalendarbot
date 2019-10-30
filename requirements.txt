@@ -1,5 +1,6 @@
+gila==0.2.0
 praw==6.3.1
 python-twitter==3.5
 schedule==0.6.0
-PyYAML==5.1
+PyYAML==5.1.2
 firebase-admin==3.0.0

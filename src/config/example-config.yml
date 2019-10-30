@@ -1,9 +1,6 @@
-creds:
-  reddit:
-    client_id: ""
-    client_secret: ""
-  twitter:
-    consumer_key: ""
-    consumer_secret: ""
-    access_token: ""
-    access_token_secret: ""
+reddit_client_id: ""
+reddit_client_secret: ""
+twitter_consumer_key: ""
+twitter_consumer_secret: ""
+twitter_access_token: ""
+twitter_access_token_secret: ""
